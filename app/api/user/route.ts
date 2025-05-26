@@ -1,24 +1,34 @@
 import { PrismaClient } from "@prisma/client";
-
-export const prisma = new PrismaClient();
 import { createUserSchema } from "@/lib/validation/user";
 
-export async function GET() {
-  const users = await prisma.user.findMany();
-  return Response.json(users);
-}
+const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const parsed = createUserSchema.safeParse(body);
+  try {
+    const body = await req.json();
 
-  if (!parsed.success) {
-    return new Response("Invalid data", { status: 400 });
+    // Validate input
+    const parsed = createUserSchema.safeParse(body);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.errors }), {
+        status: 400,
+      });
+    }
+
+    const { name, email } = parsed.data;
+
+    // Save to DB
+    const newUser = await prisma.user.create({
+      data: { name, email },
+    });
+
+    return new Response(JSON.stringify(newUser), {
+      status: 201,
+    });
+  } catch (error) {
+    console.error("POST /api/user error:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+    });
   }
-
-  const user = await prisma.user.create({
-    data: parsed.data,
-  });
-
-  return Response.json(user);
 }

@@ -5,4 +5,7 @@ export const createUserSchema = z.object({
   email: z.string().email(),
 });
 
+export const updateUserSchema = createUserSchema.partial();
+
 export type CreateUserSchema = z.infer<typeof createUserSchema>;
+export type UpdateUserSchema = z.infer<typeof updateUserSchema>;
